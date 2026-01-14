@@ -187,12 +187,9 @@ func getChangelists() map[string][]string {
 }
 
 func getUnsavedAssets() []string {
-	dirtyFiles, _ := findDirtyFiles()
-	var files []string
-	for _, df := range dirtyFiles {
-		files = append(files, df.Path)
-	}
-	return files
+	// Don't scan - this is too slow for the view changes screen
+	// Users can use option 2 to scan for modified files
+	return []string{}
 }
 
 func getUncontrolledFiles() []string {

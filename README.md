@@ -22,6 +22,7 @@ A powerful Windows tool to manage Perforce workspace changes with an Unreal Engi
 - **Checkout files** - Open files for edit (`p4 edit`)
 - **Reconcile** - Auto-detect and sync all changes (`p4 reconcile`)
 - **Revert files** - Restore files to P4 version (`p4 sync -f`)
+- **Hijacked file management** - Identify and revert files auto-checked out by UE5
 - **UE-style view** - Changelist viewer like Unreal Engine
 
 ### 🎨 User Experience
@@ -62,13 +63,21 @@ Double-click `RUN.bat` or run `p4chimari.exe` from anywhere.
 
 ### Workflow Example
 
+**Quick Mode (Hijacked Files):**
 1. **Launch** → Shows ASCII art and connection status
-2. **Select Folders** → Choose which Content subfolders to scan
+2. **Select Option 2** → Manage hijacked files (quick mode)
+3. **View Status** → See real changes vs hijacked files
+4. **Auto-Revert** → Clean up unchanged files
+
+**Standard Mode (Folder Scanning):**
+1. **Launch** → Shows ASCII art and connection status
+2. **Select Option 1** → Scan folders for changes
+3. **Select Folders** → Choose which Content subfolders to scan
    - Browse: Interactive folder picker
    - Recent: Quick access to previous selections
-3. **Scan** → Displays modified files with action types
-4. **Filter** → Show only adds, edits, or deletes
-5. **Take Action** → Checkout, reconcile, or revert selected files
+4. **Scan** → Displays modified files with action types
+5. **Filter** → Show only adds, edits, or deletes
+6. **Take Action** → Checkout, reconcile, or revert selected files
 
 ---
 
@@ -105,6 +114,15 @@ P4CHIMARI stores config in `~/.p4chimari.json`:
 ---
 
 ## 🎯 Key Features Explained
+
+### Hijacked File Management (NEW!)
+Unreal Engine 5 automatically checks out files when you open it, even if you don't modify them. This creates "hijacked files" that clutter your changelist.
+
+**Solution:**
+- **Option 6: Show hijacked files status** - See which files have real changes vs unchanged
+- **Option 7: Revert hijacked files** - Automatically revert all unchanged files using `p4 revert -a`
+
+This keeps only files with actual modifications in your changelist!
 
 ### Filter by Action
 ```

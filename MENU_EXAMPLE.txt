@@ -1,0 +1,11 @@
+─────────────────────────────────────
+MAIN MENU
+─────────────────────────────────────
+  1. View Changes (UE-style view)
+  2. Scan & show modified files (choose folders)
+  3. Reconcile all files in Content folder
+  4. 🎯 Show hijacked files - See which opened files have NO changes
+  5. 🧹 Auto-revert unchanged files - Clean up hijacked files
+  6. Exit
+
+Enter choice (1-6):

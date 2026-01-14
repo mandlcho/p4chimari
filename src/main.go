@@ -82,14 +82,69 @@ func main() {
 	// Load config
 	config, _ := loadConfig()
 
-	// Show folder picker
-	fmt.Println("\nSelect folder(s) to scan:")
-	selectedFolders, err := showFolderPicker(p4Info, config)
-	if err != nil {
-		fmt.Printf("Cancelled: %v\n", err)
-		return
-	}
+	// Single-level main menu
+	reader := bufio.NewReader(os.Stdin)
 
+	for {
+		fmt.Println("\n─────────────────────────────────────")
+		fmt.Println("MAIN MENU")
+		fmt.Println("─────────────────────────────────────")
+		fmt.Println("  1. View Changes (UE-style view)")
+		fmt.Println("  2. Scan & show modified files (choose folders)")
+		fmt.Println("  3. Reconcile all files in Project folder")
+		fmt.Println("  4. 🎯 Show hijacked files - See which opened files have NO changes")
+		fmt.Println("  5. 🧹 Auto-revert unchanged files - Clean up hijacked files")
+		fmt.Println("  6. Exit")
+		fmt.Print("\nEnter choice (1-6): ")
+
+		choice, _ := reader.ReadString('\n')
+		choice = strings.TrimSpace(choice)
+
+		switch choice {
+		case "1":
+			showViewChanges(p4Info)
+			fmt.Print("\nPress Enter to continue...")
+			reader.ReadString('\n')
+		case "2":
+			// Show folder picker
+			fmt.Println("\nSelect folder(s) to scan:")
+			selectedFolders, err := showFolderPicker(p4Info, config)
+			if err != nil {
+				fmt.Printf("Cancelled: %v\n", err)
+				continue
+			}
+
+			// Scan and show results
+			scanAndShowFiles(selectedFolders, reader)
+		case "3":
+			projectPath := filepath.Join(p4Info.ClientRoot, "Project")
+			reconcileFilesInFolders([]string{projectPath})
+			fmt.Print("\nPress Enter to continue...")
+			reader.ReadString('\n')
+		case "4":
+			err := showHijackedStatus()
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			}
+			fmt.Print("\nPress Enter to continue...")
+			reader.ReadString('\n')
+		case "5":
+			err := revertHijackedFiles()
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			}
+			fmt.Print("\nPress Enter to continue...")
+			reader.ReadString('\n')
+		case "6":
+			fmt.Println("Exiting.")
+			return
+		default:
+			fmt.Println("Invalid choice.")
+		}
+	}
+}
+
+func scanAndShowFiles(selectedFolders []string, reader *bufio.Reader) {
 	// Scan workspace for changes
 	fmt.Println("\nScanning workspace for changes...")
 	fmt.Println("─────────────────────────────────────")
@@ -110,7 +165,7 @@ func main() {
 	}
 	fmt.Println("─────────────────────────────────────")
 
-	// Show pending changes
+	// Show results
 	fmt.Println("\n📋 Pending Changes (Already Checked Out):")
 	if len(pendingFiles) == 0 {
 		fmt.Println("  ✓ None")
@@ -126,8 +181,7 @@ func main() {
 		}
 	}
 
-	// Show files that need reconciling
-	fmt.Println("\n⚠ Files Modified But Not Checked Out (Need Reconcile):")
+	fmt.Println("\n⚠ Files Modified But Not Checked Out:")
 	if len(dirtyFiles) == 0 {
 		fmt.Println("  ✓ None - All changes are tracked!")
 	} else {
@@ -142,51 +196,44 @@ func main() {
 		}
 	}
 
-	// Summary
+	// Actions menu
 	fmt.Println("\n─────────────────────────────────────")
-	fmt.Println("Summary:")
-	fmt.Printf("  Total Pending:  %d file(s)\n", len(pendingFiles))
-	fmt.Printf("  Need Reconcile: %d file(s)\n", len(dirtyFiles))
+	fmt.Println("Actions:")
+	fmt.Println("  1. Filter by action (add/edit/delete)")
+	fmt.Println("  2. Checkout selected files")
+	fmt.Println("  3. Reconcile all in these folders")
+	fmt.Println("  4. Revert files")
+	fmt.Println("  5. Back to main menu")
+	fmt.Print("\nEnter choice (1-5): ")
 
-	// Main menu
-	fmt.Println("\n─────────────────────────────────────")
-	fmt.Println("What would you like to do?")
-	fmt.Println("  1. View Changes (UE-style view)")
-	fmt.Println("  2. Filter by action (add/edit/delete)")
-	fmt.Println("  3. Checkout selected files")
-	fmt.Println("  4. Reconcile all")
-	fmt.Println("  5. Revert files (restore to P4 version)")
-	fmt.Println("  6. Exit")
-	fmt.Print("\nEnter choice (1-6): ")
-
-	reader := bufio.NewReader(os.Stdin)
 	choice, _ := reader.ReadString('\n')
 	choice = strings.TrimSpace(choice)
 
 	switch choice {
 	case "1":
-		showViewChanges(p4Info)
-	case "2":
 		filterByAction(dirtyFiles, reader)
-	case "3":
+	case "2":
 		if len(dirtyFiles) > 0 {
 			selectAndCheckoutFiles(dirtyFiles)
 		} else {
 			fmt.Println("No files to checkout.")
 		}
-	case "4":
+	case "3":
 		reconcileFilesInFolders(selectedFolders)
-	case "5":
+	case "4":
 		if len(dirtyFiles) > 0 {
 			revertFiles(dirtyFiles, reader)
 		} else {
 			fmt.Println("No files to revert.")
 		}
-	case "6":
-		fmt.Println("Exiting.")
+	case "5":
+		return
 	default:
 		fmt.Println("Invalid choice.")
 	}
+
+	fmt.Print("\nPress Enter to continue...")
+	reader.ReadString('\n')
 }
 
 func isP4Available() bool {
