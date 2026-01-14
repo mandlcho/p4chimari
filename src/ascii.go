@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os/exec"
+	"os"
+)
 
 func printPachimari() {
 	fmt.Println(`
@@ -22,10 +26,22 @@ func printPachimari() {
 	`)
 }
 
+func clearScreen() {
+	cmd := exec.Command("cmd", "/c", "cls")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
+
 func printHeader() {
 	printPachimari()
 	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
 	fmt.Println("                    p4chimari - Perforce Workspace Helper")
 	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
 	fmt.Println()
+}
+
+func redrawWithHeader(content string) {
+	clearScreen()
+	printHeader()
+	fmt.Print(content)
 }

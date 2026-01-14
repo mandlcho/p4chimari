@@ -13,14 +13,12 @@ func showFolderPicker(p4Info *P4Info, config *Config) ([]string, error) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		// Clear screen
-		cmd := exec.Command("cmd", "/c", "cls")
-		cmd.Stdout = os.Stdout
-		cmd.Run()
+		// Clear screen and show header
+		clearScreen()
+		printHeader()
 
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
-		fmt.Println("                              SELECT FOLDERS TO SCAN")
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+		fmt.Println("SELECT FOLDERS TO SCAN")
+		fmt.Println("─────────────────────────────────────")
 		fmt.Println()
 
 		// Show recent folders first
@@ -96,14 +94,12 @@ func browseFolders(p4Info *P4Info, config *Config, reader *bufio.Reader) ([]stri
 	selected := make(map[int]bool)
 
 	for {
-		// Clear screen
-		cmd := exec.Command("cmd", "/c", "cls")
-		cmd.Stdout = os.Stdout
-		cmd.Run()
+		// Clear screen and show header
+		clearScreen()
+		printHeader()
 
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
-		fmt.Println("                         SELECT FOLDERS (Multi-select)")
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+		fmt.Println("SELECT FOLDERS (Multi-select)")
+		fmt.Println("─────────────────────────────────────")
 		fmt.Println()
 
 		for i, folder := range folders {

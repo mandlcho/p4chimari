@@ -18,10 +18,9 @@ func showViewChanges(p4Info *P4Info) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		// Clear screen (Windows)
-		cmd := exec.Command("cmd", "/c", "cls")
-		cmd.Stdout = os.Stdout
-		cmd.Run()
+		// Clear screen and show header
+		clearScreen()
+		printHeader()
 
 		// Get data
 		changelists := getChangelists()
@@ -33,10 +32,9 @@ func showViewChanges(p4Info *P4Info) {
 		leftWidth := 35
 		rightWidth := width - leftWidth - 3
 
-		// Header
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
-		fmt.Printf("                           VIEW CHANGES - %s\n", p4Info.ClientName)
-		fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+		// Section header
+		fmt.Printf("VIEW CHANGES - %s\n", p4Info.ClientName)
+		fmt.Println("─────────────────────────────────────")
 		fmt.Println()
 
 		// Menu options
@@ -115,14 +113,12 @@ func showViewChanges(p4Info *P4Info) {
 }
 
 func showCategoryFiles(category ChangelistCategory, reader *bufio.Reader) {
-	// Clear screen
-	cmd := exec.Command("cmd", "/c", "cls")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
+	// Clear screen and show header
+	clearScreen()
+	printHeader()
 
-	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
-	fmt.Printf("  %s - %d file(s)\n", category.Name, category.Count)
-	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+	fmt.Printf("%s - %d file(s)\n", category.Name, category.Count)
+	fmt.Println("─────────────────────────────────────")
 	fmt.Println()
 
 	if len(category.Files) == 0 {

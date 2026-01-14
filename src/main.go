@@ -31,6 +31,8 @@ func main() {
 		bufio.NewReader(os.Stdin).ReadString('\n')
 	}()
 
+	// Clear screen and show header
+	clearScreen()
 	printHeader()
 
 	// Check if p4 is available
