@@ -1,65 +1,147 @@
-# p4chimari
+# 🎯 P4CHIMARI
 
-A simple Windows tool to manage modified but not checked-out files in your Perforce workspace.
+<p align="center">
+  <img src="docs/pachimari.jpg" width="200" alt="P4CHIMARI Logo">
+</p>
 
-## Features
+A powerful Windows tool to manage Perforce workspace changes with an Unreal Engine-style interface.
 
-- Connects to your local P4 workspace automatically
-- Finds files that have been modified but are not checked out
-- Lets you choose to either:
-  - **Check out** files (`p4 edit`)
-  - **Reconcile** files (`p4 reconcile`)
+## ✨ Features
 
-## Prerequisites
+### 📁 Smart Folder Selection
+- **Interactive folder picker** - Browse and tick folders you want to scan
+- **Recent folders** - Quick access to your most-used folders
+- **Multi-select support** - Scan multiple folders at once
 
-- Go 1.21 or higher (for building)
-- Perforce CLI (`p4`) installed and in your PATH
-- Active P4 workspace configured
+### 🔍 Advanced Filtering
+- **Filter by action type** - View only adds, edits, or deletes
+- **Pending changes** - See what's already checked out
+- **Unsaved assets** - Find modified files not checked out
 
-## Building
+### 🛠️ Powerful Actions
+- **Checkout files** - Open files for edit (`p4 edit`)
+- **Reconcile** - Auto-detect and sync all changes (`p4 reconcile`)
+- **Revert files** - Restore files to P4 version (`p4 sync -f`)
+- **UE-style view** - Changelist viewer like Unreal Engine
 
+### 🎨 User Experience
+- Animated spinner with elapsed time
+- ASCII art header
+- Progress indicators
+- Double confirmation for dangerous operations
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Go 1.21+** (for building)
+- **Perforce CLI** (`p4`) in your PATH
+- Active P4 workspace
+
+### Installation
+
+**Option 1: Easy Install (Recommended)**
+1. Double-click `INSTALL.bat`
+2. Wait for build to complete
+3. Double-click `RUN.bat` to launch
+
+**Option 2: Manual Build**
 ```bash
-go build -o p4chimari.exe
+cd src
+go build -o ../p4chimari.exe
 ```
 
-## Usage
+---
 
-1. Navigate to your P4 workspace directory
-2. Run `p4chimari.exe`
-3. The tool will scan for modified files and present options
+## 📖 Usage
+
+### Running P4CHIMARI
+
+Double-click `RUN.bat` or run `p4chimari.exe` from anywhere.
+
+### Workflow Example
+
+1. **Launch** → Shows ASCII art and connection status
+2. **Select Folders** → Choose which Content subfolders to scan
+   - Browse: Interactive folder picker
+   - Recent: Quick access to previous selections
+3. **Scan** → Displays modified files with action types
+4. **Filter** → Show only adds, edits, or deletes
+5. **Take Action** → Checkout, reconcile, or revert selected files
+
+---
+
+## 📂 Project Structure
 
 ```
-p4chimari - Perforce Workspace Helper
-=====================================
-
-Connected to P4 workspace: your-workspace
-
-Scanning for modified files not checked out...
-
-Found 3 modified file(s) not checked out:
-  1. C:\workspace\src\main.cpp
-  2. C:\workspace\config\settings.ini
-  3. C:\workspace\README.md
-
-What would you like to do?
-  1. Check out files (p4 edit)
-  2. Reconcile files (p4 reconcile)
-  3. Cancel
-
-Enter choice (1-3):
+p4chimari/
+├── RUN.bat              ← Click this to run!
+├── INSTALL.bat          ← Click this to build!
+├── p4chimari.exe        ← Generated executable
+├── README.md            ← You are here
+├── src/                 ← Source code
+│   ├── main.go
+│   ├── ascii.go
+│   ├── config.go
+│   ├── folderpicker.go
+│   └── viewchanges.go
+└── docs/                ← Documentation & assets
+    └── pachimari.jpg
 ```
 
-## How It Works
+---
 
-1. Verifies P4 is available and you're in a workspace
-2. Runs `p4 reconcile -n ...` to preview changes (non-destructive)
-3. Presents the list of modified files
-4. Executes your choice:
-   - **Check out**: Runs `p4 edit` on each file
-   - **Reconcile**: Runs `p4 reconcile ...` to sync workspace state
+## ⚙️ Configuration
 
-## Notes
+P4CHIMARI stores config in `~/.p4chimari.json`:
+- Recent folder selections
+- Usage statistics
+- Last scan locations
 
-- The tool operates on the current directory and subdirectories (`...`)
-- No files are modified until you make a choice
-- Reconcile will also detect new and deleted files, not just edits
+---
+
+## 🎯 Key Features Explained
+
+### Filter by Action
+```
+Filter by action type:
+  1. Show only Edits    - Modified files
+  2. Show only Adds     - New files
+  3. Show only Deletes  - Removed files
+  4. Show All           - Everything
+```
+
+### Revert Files (⚠️ Dangerous)
+Restores files to P4 version, **permanently deleting local changes**.
+- Select individual files
+- Double confirmation required
+- Type "YES" to confirm
+
+### Folder Picker
+```
+┌─ CATEGORIES ─────────┐
+│ [ ] Blueprints       │
+│ [✓] Maps             │
+│ [✓] Characters       │
+│ [ ] Audio            │
+└──────────────────────┘
+```
+
+---
+
+## 🤝 Contributing
+
+Feel free to open issues or submit pull requests!
+
+---
+
+## 📝 License
+
+MIT License - Feel free to use and modify!
+
+---
+
+<p align="center">
+  Made with ❤️ for Unreal Engine + Perforce workflows
+</p>

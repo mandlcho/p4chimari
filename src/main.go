@@ -31,8 +31,7 @@ func main() {
 		bufio.NewReader(os.Stdin).ReadString('\n')
 	}()
 
-	fmt.Println("p4chimari - Perforce Workspace Helper")
-	fmt.Println("=====================================\n")
+	printHeader()
 
 	// Check if p4 is available
 	if !isP4Available() {
