@@ -13,19 +13,19 @@ func clearScreen() {
 }
 
 func printHeader() {
-	fmt.Println("╔══════════════════════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  ██████████ ██████████   P4CHIMARI - Perforce Workspace Helper              ║")
-	fmt.Println("║  █████████   █████████   ───────────────────────────────────────             ║")
-	fmt.Println("║  ███████        ██████   Manage modified files and reconcile                 ║")
-	fmt.Println("║  ████              ███   changes with your Perforce workspace                ║")
-	fmt.Println("║  ███                ██                                                        ║")
-	fmt.Println("║  ███    █     █     ██   Version: 1.0                                        ║")
-	fmt.Println("║  ████      █       ███   Commands: checkout | reconcile | revert            ║")
-	fmt.Println("║  ██████          █████                                                        ║")
-	fmt.Println("║  ████             ████                                                        ║")
-	fmt.Println("║  ████████  █  ████████                                                        ║")
-	fmt.Println("║  █████████████████████                                                        ║")
-	fmt.Println("╚══════════════════════════════════════════════════════════════════════════════╝")
+	fmt.Println("┌──────────────────────────────────────────────────────────────────────────────┐")
+	fmt.Println("│  ██████████ ██████████   P4CHIMARI - Perforce Workspace Helper              │")
+	fmt.Println("│  █████████   █████████   ───────────────────────────────────────             │")
+	fmt.Println("│  ███████        ██████   Manage modified files and reconcile                 │")
+	fmt.Println("│  ████              ███   changes with your Perforce workspace                │")
+	fmt.Println("│  ███                ██                                                        │")
+	fmt.Println("│  ███    █     █     ██   Version: 1.0                                        │")
+	fmt.Println("│  ████      █       ███   Commands: checkout | reconcile | revert            │")
+	fmt.Println("│  ██████          █████                                                        │")
+	fmt.Println("│  ████             ████                                                        │")
+	fmt.Println("│  ████████  █  ████████                                                        │")
+	fmt.Println("│  █████████████████████                                                        │")
+	fmt.Println("└──────────────────────────────────────────────────────────────────────────────┘")
 	fmt.Println()
 }
 
