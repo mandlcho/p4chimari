@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 
-if not exist p4chimari.exe (
+if not exist bin\p4chimari.exe (
     echo ========================================
     echo   ERROR: p4chimari.exe not found!
     echo ========================================
@@ -12,4 +12,4 @@ if not exist p4chimari.exe (
     exit /b 1
 )
 
-p4chimari.exe
+bin\p4chimari.exe

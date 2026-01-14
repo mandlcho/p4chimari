@@ -309,7 +309,7 @@ func scanFolder(folder string, verbose bool) ([]DirtyFile, error) {
 					return
 				default:
 					elapsed := time.Since(startTime).Seconds()
-					fmt.Printf("\r  %s Scanning workspace... (%.0fs)", spinner[i%len(spinner)], elapsed)
+					fmt.Printf("\r  %s Scanning... (%.0fs) [Ctrl+C to cancel]", spinner[i%len(spinner)], elapsed)
 					i++
 					time.Sleep(100 * time.Millisecond)
 				}

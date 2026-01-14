@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 cd src
-go build -o ../p4chimari.exe
+go build -o ../bin/p4chimari.exe
 
 if %ERRORLEVEL% EQU 0 (
     echo.
@@ -13,9 +13,9 @@ if %ERRORLEVEL% EQU 0 (
     echo   BUILD SUCCESS!
     echo ========================================
     echo.
-    echo Executable created: p4chimari.exe
+    echo Executable created in bin/ folder
     echo.
-    echo To run: Double-click p4chimari.exe
+    echo To run: Double-click RUN.bat
     echo.
 ) else (
     echo.

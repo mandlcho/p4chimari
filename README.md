@@ -76,10 +76,11 @@ Double-click `RUN.bat` or run `p4chimari.exe` from anywhere.
 
 ```
 p4chimari/
-├── RUN.bat              ← Click this to run!
-├── INSTALL.bat          ← Click this to build!
-├── p4chimari.exe        ← Generated executable
-├── README.md            ← You are here
+├── 🎯 RUN.bat           ← CLICK THIS TO RUN!
+├── 🔨 INSTALL.bat       ← Click this to build first
+├── 📖 README.md         ← You are here
+├── bin/                 ← Executable (auto-generated)
+│   └── p4chimari.exe
 ├── src/                 ← Source code
 │   ├── main.go
 │   ├── ascii.go
@@ -89,6 +90,8 @@ p4chimari/
 └── docs/                ← Documentation & assets
     └── pachimari.jpg
 ```
+
+**Just double-click RUN.bat** - that's it!
 
 ---
 

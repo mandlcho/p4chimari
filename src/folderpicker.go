@@ -118,7 +118,8 @@ func browseFolders(p4Info *P4Info, config *Config, reader *bufio.Reader) ([]stri
 		fmt.Printf("Selected: %d folder(s)\n", len(selected))
 		fmt.Println()
 		fmt.Println("Commands:")
-		fmt.Println("  [number]     - Toggle selection")
+		fmt.Println("  [number]     - Toggle selection (e.g., '5')")
+		fmt.Println("  [1 4 5 10]   - Multi-select folders (space-separated)")
 		fmt.Println("  [a]          - Select all")
 		fmt.Println("  [n]          - Clear selection")
 		fmt.Println("  [done]       - Confirm selection")
@@ -126,9 +127,9 @@ func browseFolders(p4Info *P4Info, config *Config, reader *bufio.Reader) ([]stri
 		fmt.Print("\nEnter command: ")
 
 		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(strings.ToLower(input))
+		input = strings.TrimSpace(input)
 
-		if input == "done" {
+		if strings.ToLower(input) == "done" {
 			if len(selected) == 0 {
 				fmt.Println("No folders selected!")
 				fmt.Print("Press Enter to continue...")
@@ -144,16 +145,28 @@ func browseFolders(p4Info *P4Info, config *Config, reader *bufio.Reader) ([]stri
 			}
 			config.Save()
 			return selectedPaths, nil
-		} else if input == "cancel" {
+		} else if strings.ToLower(input) == "cancel" {
 			return nil, fmt.Errorf("cancelled")
-		} else if input == "a" {
+		} else if strings.ToLower(input) == "a" {
+			selected = make(map[int]bool)
 			for i := range folders {
 				selected[i] = true
 			}
-		} else if input == "n" {
+		} else if strings.ToLower(input) == "n" {
 			selected = make(map[int]bool)
+		} else if strings.Contains(input, " ") {
+			// Multi-select: space-separated numbers
+			selected = make(map[int]bool) // Clear previous selection
+			parts := strings.Fields(input)
+			for _, part := range parts {
+				var idx int
+				_, err := fmt.Sscanf(part, "%d", &idx)
+				if err == nil && idx > 0 && idx <= len(folders) {
+					selected[idx-1] = true // Convert to 0-based
+				}
+			}
 		} else {
-			// Try to parse as number
+			// Try to parse as single number
 			var idx int
 			_, err := fmt.Sscanf(input, "%d", &idx)
 			if err == nil && idx > 0 && idx <= len(folders) {

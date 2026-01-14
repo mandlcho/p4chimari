@@ -1,6 +1,4 @@
-*.exe
+bin/
 *.exe~
 *.test
 *.out
-*.jpg
-*.png
