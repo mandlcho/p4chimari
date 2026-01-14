@@ -159,7 +159,6 @@ func getChangelists() map[string][]string {
 	}
 
 	lines := strings.Split(string(output), "\n")
-	currentChangelist := "default"
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -185,7 +184,6 @@ func getChangelists() map[string][]string {
 
 			filePath := strings.Split(line, "#")[0]
 			result[changeNum] = append(result[changeNum], filePath)
-			currentChangelist = changeNum
 		}
 	}
 

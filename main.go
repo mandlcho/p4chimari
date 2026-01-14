@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type DirtyFile struct {
@@ -77,22 +78,85 @@ func main() {
 	fmt.Printf("  Current Dir:     %s\n", p4Info.CurrentDir)
 	fmt.Println("─────────────────────────────────────")
 
-	// Show quick summary
-	pendingFiles, _ := getPendingFiles()
-	dirtyFiles, _ := findDirtyFiles()
+	// Load config
+	config, _ := loadConfig()
 
-	fmt.Println("\nQuick Summary:")
-	fmt.Printf("  Pending Changes: %d file(s)\n", len(pendingFiles))
-	fmt.Printf("  Unsaved Assets:  %d file(s)\n", len(dirtyFiles))
+	// Show folder picker
+	fmt.Println("\nSelect folder(s) to scan:")
+	selectedFolders, err := showFolderPicker(p4Info, config)
+	if err != nil {
+		fmt.Printf("Cancelled: %v\n", err)
+		return
+	}
+
+	// Scan workspace for changes
+	fmt.Println("\nScanning workspace for changes...")
+	fmt.Println("─────────────────────────────────────")
+
+	fmt.Printf("→ Checking pending changes (p4 opened)...\n")
+	pendingFiles, _ := getPendingFiles()
+	fmt.Printf("  ✓ Found %d file(s) already checked out\n", len(pendingFiles))
+
+	fmt.Printf("→ Scanning for modified files in selected folders...\n")
+	for _, folder := range selectedFolders {
+		fmt.Printf("  - %s\n", folder)
+	}
+	dirtyFiles, err := findDirtyFilesInFolders(selectedFolders, true)
+	if err != nil {
+		fmt.Printf("  ✗ Error: %v\n", err)
+	} else {
+		fmt.Printf("  ✓ Found %d file(s) modified but not checked out\n", len(dirtyFiles))
+	}
+	fmt.Println("─────────────────────────────────────")
+
+	// Show pending changes
+	fmt.Println("\n📋 Pending Changes (Already Checked Out):")
+	if len(pendingFiles) == 0 {
+		fmt.Println("  ✓ None")
+	} else {
+		fmt.Printf("  %d file(s) checked out\n", len(pendingFiles))
+		for i, file := range pendingFiles {
+			if i < 10 {
+				fmt.Printf("    • %s\n", file)
+			}
+		}
+		if len(pendingFiles) > 10 {
+			fmt.Printf("    ... and %d more\n", len(pendingFiles)-10)
+		}
+	}
+
+	// Show files that need reconciling
+	fmt.Println("\n⚠ Files Modified But Not Checked Out (Need Reconcile):")
+	if len(dirtyFiles) == 0 {
+		fmt.Println("  ✓ None - All changes are tracked!")
+	} else {
+		fmt.Printf("  %d file(s) need attention\n", len(dirtyFiles))
+		for i, file := range dirtyFiles {
+			if i < 10 {
+				fmt.Printf("    • [%s] %s\n", file.Action, file.Path)
+			}
+		}
+		if len(dirtyFiles) > 10 {
+			fmt.Printf("    ... and %d more\n", len(dirtyFiles)-10)
+		}
+	}
+
+	// Summary
+	fmt.Println("\n─────────────────────────────────────")
+	fmt.Println("Summary:")
+	fmt.Printf("  Total Pending:  %d file(s)\n", len(pendingFiles))
+	fmt.Printf("  Need Reconcile: %d file(s)\n", len(dirtyFiles))
 
 	// Main menu
 	fmt.Println("\n─────────────────────────────────────")
 	fmt.Println("What would you like to do?")
 	fmt.Println("  1. View Changes (UE-style view)")
-	fmt.Println("  2. Quick checkout all unsaved")
-	fmt.Println("  3. Quick reconcile all")
-	fmt.Println("  4. Exit")
-	fmt.Print("\nEnter choice (1-4): ")
+	fmt.Println("  2. Filter by action (add/edit/delete)")
+	fmt.Println("  3. Checkout selected files")
+	fmt.Println("  4. Reconcile all")
+	fmt.Println("  5. Revert files (restore to P4 version)")
+	fmt.Println("  6. Exit")
+	fmt.Print("\nEnter choice (1-6): ")
 
 	reader := bufio.NewReader(os.Stdin)
 	choice, _ := reader.ReadString('\n')
@@ -102,14 +166,22 @@ func main() {
 	case "1":
 		showViewChanges(p4Info)
 	case "2":
-		if len(dirtyFiles) > 0 {
-			checkoutFiles(dirtyFiles)
-		} else {
-			fmt.Println("No unsaved files to checkout.")
-		}
+		filterByAction(dirtyFiles, reader)
 	case "3":
-		reconcileFiles()
+		if len(dirtyFiles) > 0 {
+			selectAndCheckoutFiles(dirtyFiles)
+		} else {
+			fmt.Println("No files to checkout.")
+		}
 	case "4":
+		reconcileFilesInFolders(selectedFolders)
+	case "5":
+		if len(dirtyFiles) > 0 {
+			revertFiles(dirtyFiles, reader)
+		} else {
+			fmt.Println("No files to revert.")
+		}
+	case "6":
 		fmt.Println("Exiting.")
 	default:
 		fmt.Println("Invalid choice.")
@@ -196,21 +268,71 @@ func getPendingFiles() ([]string, error) {
 }
 
 func findDirtyFiles() ([]DirtyFile, error) {
-	// Get current directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
+	p4Info, _ := getP4Info()
+	contentPath := filepath.Join(p4Info.ClientRoot, "Project", "Content")
+	return findDirtyFilesInFolders([]string{contentPath}, false)
+}
+
+func findDirtyFilesInFolders(folders []string, verbose bool) ([]DirtyFile, error) {
+	var allDirtyFiles []DirtyFile
+
+	for _, folder := range folders {
+		files, err := scanFolder(folder, verbose)
+		if err != nil {
+			return nil, err
+		}
+		allDirtyFiles = append(allDirtyFiles, files...)
 	}
 
-	// Run p4 reconcile in preview mode to find modified files
-	cmd := exec.Command("p4", "reconcile", "-n", "...")
-	cmd.Dir = cwd
-	output, err := cmd.CombinedOutput()
+	return allDirtyFiles, nil
+}
+
+func scanFolder(folder string, verbose bool) ([]DirtyFile, error) {
+	// Run p4 reconcile in preview mode
+	if verbose {
+		fmt.Printf("  Executing: p4 reconcile -n %s/...\n", folder)
+	}
+
+	cmd := exec.Command("p4", "reconcile", "-n", filepath.Join(folder, "..."))
+	cmd.Dir = folder
+
+	// Create a channel to track progress
+	done := make(chan bool)
+	if verbose {
+		go func() {
+			spinner := []string{"|", "/", "-", "\\"}
+			i := 0
+			startTime := time.Now()
+			for {
+				select {
+				case <-done:
+					fmt.Printf("\r  ✓ Complete (took %.1f seconds)\n", time.Since(startTime).Seconds())
+					return
+				default:
+					elapsed := time.Since(startTime).Seconds()
+					fmt.Printf("\r  %s Scanning workspace... (%.0fs)", spinner[i%len(spinner)], elapsed)
+					i++
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+		}()
+	}
+
+	output, _ := cmd.CombinedOutput()
+
+	if verbose {
+		done <- true
+	}
 
 	// Note: p4 reconcile -n can return various exit codes
 	outputStr := string(output)
 
+	if verbose {
+		fmt.Printf("  Processing results...\n")
+	}
+
 	var dirtyFiles []DirtyFile
+	fileCount := 0
 
 	lines := strings.Split(outputStr, "\n")
 	for _, line := range lines {
@@ -218,9 +340,6 @@ func findDirtyFiles() ([]DirtyFile, error) {
 		if line == "" {
 			continue
 		}
-
-		// Debug: show raw output
-		// fmt.Printf("DEBUG: %s\n", line)
 
 		// Parse different p4 reconcile -n output formats:
 		// "//depot/path/file.txt#1 - opened for edit"
@@ -264,6 +383,11 @@ func findDirtyFiles() ([]DirtyFile, error) {
 				Path:   localPath,
 				Action: action,
 			})
+
+			fileCount++
+			if verbose && fileCount%10 == 0 {
+				fmt.Printf("  ... found %d files so far\n", fileCount)
+			}
 		}
 	}
 
@@ -309,16 +433,19 @@ func checkoutFiles(files []DirtyFile) {
 
 func reconcileFiles() {
 	fmt.Println("\nReconciling files...")
-	fmt.Println("This will open files for add, edit, or delete to match your workspace.")
+	fmt.Println("This will open files for add, edit, or delete to match your workspace (Project/Content folder only).")
 
-	cwd, err := os.Getwd()
+	p4Info, err := getP4Info()
 	if err != nil {
-		fmt.Printf("Error getting current directory: %v\n", err)
+		fmt.Printf("Error getting workspace info: %v\n", err)
 		return
 	}
 
-	cmd := exec.Command("p4", "reconcile", "...")
-	cmd.Dir = cwd
+	// Only reconcile the Content folder
+	contentPath := filepath.Join(p4Info.ClientRoot, "Project", "Content")
+
+	cmd := exec.Command("p4", "reconcile", filepath.Join(contentPath, "..."))
+	cmd.Dir = contentPath
 	output, err := cmd.CombinedOutput()
 
 	outputStr := string(output)
@@ -341,17 +468,20 @@ func reconcileFiles() {
 }
 
 func showReconcilePreview() {
-	fmt.Println("\nReconcile Preview (what would happen):")
+	fmt.Println("\nReconcile Preview (what would happen in Project/Content folder):")
 	fmt.Println("─────────────────────────────────────")
 
-	cwd, err := os.Getwd()
+	p4Info, err := getP4Info()
 	if err != nil {
-		fmt.Printf("Error getting current directory: %v\n", err)
+		fmt.Printf("Error getting workspace info: %v\n", err)
 		return
 	}
 
-	cmd := exec.Command("p4", "reconcile", "-n", "...")
-	cmd.Dir = cwd
+	// Only reconcile the Content folder
+	contentPath := filepath.Join(p4Info.ClientRoot, "Project", "Content")
+
+	cmd := exec.Command("p4", "reconcile", "-n", filepath.Join(contentPath, "..."))
+	cmd.Dir = contentPath
 	output, err := cmd.CombinedOutput()
 
 	outputStr := string(output)
@@ -412,4 +542,171 @@ func selectAndCheckoutFiles(files []DirtyFile) {
 
 	fmt.Printf("\nChecking out %d file(s)...\n", len(selectedFiles))
 	checkoutFiles(selectedFiles)
+}
+
+func filterByAction(files []DirtyFile, reader *bufio.Reader) {
+	fmt.Println("\n─────────────────────────────────────")
+	fmt.Println("Filter by action type:")
+	fmt.Println("  1. Show only Edits")
+	fmt.Println("  2. Show only Adds")
+	fmt.Println("  3. Show only Deletes")
+	fmt.Println("  4. Show All")
+	fmt.Print("\nEnter choice (1-4): ")
+
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	var filtered []DirtyFile
+	filterType := "All"
+
+	switch input {
+	case "1":
+		filterType = "Edits"
+		for _, file := range files {
+			if file.Action == "edit" {
+				filtered = append(filtered, file)
+			}
+		}
+	case "2":
+		filterType = "Adds"
+		for _, file := range files {
+			if file.Action == "add" {
+				filtered = append(filtered, file)
+			}
+		}
+	case "3":
+		filterType = "Deletes"
+		for _, file := range files {
+			if file.Action == "delete" {
+				filtered = append(filtered, file)
+			}
+		}
+	case "4":
+		filtered = files
+	default:
+		fmt.Println("Invalid choice.")
+		return
+	}
+
+	fmt.Printf("\n%s: %d file(s)\n", filterType, len(filtered))
+	showAllFiles(filtered)
+
+	fmt.Println("\nOptions:")
+	fmt.Println("  1. Checkout these files")
+	fmt.Println("  2. Revert these files")
+	fmt.Println("  3. Back")
+	fmt.Print("\nEnter choice: ")
+
+	choice, _ := reader.ReadString('\n')
+	choice = strings.TrimSpace(choice)
+
+	switch choice {
+	case "1":
+		selectAndCheckoutFiles(filtered)
+	case "2":
+		revertFiles(filtered, reader)
+	case "3":
+		return
+	}
+}
+
+func revertFiles(files []DirtyFile, reader *bufio.Reader) {
+	fmt.Println("\n⚠️  WARNING: REVERT FILES ⚠️")
+	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+	fmt.Println("This will PERMANENTLY DELETE your local changes and restore files from P4!")
+	fmt.Println("This action CANNOT be undone!")
+	fmt.Println("═══════════════════════════════════════════════════════════════════════════════")
+
+	showAllFiles(files)
+
+	fmt.Println("\nSelect files to revert (comma-separated numbers, 'all', or 'cancel'):")
+	fmt.Print("Enter selection: ")
+
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	if input == "" || input == "cancel" {
+		fmt.Println("Cancelled.")
+		return
+	}
+
+	var selectedFiles []DirtyFile
+
+	if input == "all" {
+		selectedFiles = files
+	} else {
+		selections := strings.Split(input, ",")
+		for _, sel := range selections {
+			sel = strings.TrimSpace(sel)
+			idx := 0
+			fmt.Sscanf(sel, "%d", &idx)
+			if idx > 0 && idx <= len(files) {
+				selectedFiles = append(selectedFiles, files[idx-1])
+			}
+		}
+	}
+
+	if len(selectedFiles) == 0 {
+		fmt.Println("No valid files selected.")
+		return
+	}
+
+	// Final confirmation
+	fmt.Printf("\n⚠️  FINAL CONFIRMATION: Revert %d file(s)?\n", len(selectedFiles))
+	fmt.Print("Type 'YES' to confirm: ")
+
+	confirm, _ := reader.ReadString('\n')
+	confirm = strings.TrimSpace(confirm)
+
+	if confirm != "YES" {
+		fmt.Println("Cancelled.")
+		return
+	}
+
+	fmt.Println("\nReverting files...")
+	for _, file := range selectedFiles {
+		fmt.Printf("  p4 sync -f %s\n", file.Path)
+		cmd := exec.Command("p4", "sync", "-f", file.Path)
+		output, err := cmd.CombinedOutput()
+
+		if err != nil {
+			fmt.Printf("    Error: %v\n", err)
+			if len(output) > 0 {
+				fmt.Printf("    %s\n", string(output))
+			}
+		} else {
+			fmt.Printf("    ✓ %s\n", strings.TrimSpace(string(output)))
+		}
+	}
+
+	fmt.Println("\n✓ Done! Files have been reverted to P4 versions.")
+}
+
+func reconcileFilesInFolders(folders []string) {
+	fmt.Println("\nReconciling files in selected folders...")
+	fmt.Println("This will open files for add, edit, or delete to match your workspace.")
+
+	for _, folder := range folders {
+		fmt.Printf("\nReconciling: %s\n", folder)
+		cmd := exec.Command("p4", "reconcile", filepath.Join(folder, "..."))
+		cmd.Dir = folder
+		output, err := cmd.CombinedOutput()
+
+		outputStr := string(output)
+
+		if err != nil && len(outputStr) == 0 {
+			fmt.Printf("  Error: %v\n", err)
+			continue
+		}
+
+		fmt.Println(outputStr)
+
+		if strings.Contains(outputStr, "opened for") {
+			fmt.Println("  ✓ Files have been opened for change!")
+		} else if strings.Contains(outputStr, "no file(s) to reconcile") {
+			fmt.Println("  No changes to reconcile.")
+		}
+	}
+
+	fmt.Println("\n✓ Done!")
 }

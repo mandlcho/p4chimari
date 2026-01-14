@@ -1,3 +1,6 @@
 *.exe
+*.exe~
 *.test
 *.out
+*.jpg
+*.png
