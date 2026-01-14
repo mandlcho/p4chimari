@@ -1,6 +1,9 @@
 @echo off
 cd /d "%~dp0"
 
+REM Set console window size (width, height)
+mode con: cols=100 lines=50
+
 if not exist bin\p4chimari.exe (
     echo ========================================
     echo   ERROR: p4chimari.exe not found!
