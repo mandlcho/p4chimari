@@ -94,8 +94,9 @@ func main() {
 		fmt.Println("  3. Reconcile all files in Project folder")
 		fmt.Println("  4. 🎯 Show hijacked files - See which opened files have NO changes")
 		fmt.Println("  5. 🧹 Auto-revert unchanged files - Clean up hijacked files")
-		fmt.Println("  6. Exit")
-		fmt.Print("\nEnter choice (1-6): ")
+		fmt.Println("  6. 🔍 Scan ALL modified files & force sync selected")
+		fmt.Println("  7. Exit")
+		fmt.Print("\nEnter choice (1-7): ")
 
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
@@ -136,6 +137,10 @@ func main() {
 			fmt.Print("\nPress Enter to continue...")
 			reader.ReadString('\n')
 		case "6":
+			ShowModifiedFilesAndRevert(p4Info, reader)
+			fmt.Print("\nPress Enter to continue...")
+			reader.ReadString('\n')
+		case "7":
 			fmt.Println("Exiting.")
 			return
 		default:
