@@ -1,39 +1,52 @@
-# 🎯 P4CHIMARI
+# P4CHIMARI
 
-<p align="center">
-  <img src="docs/pachimari.jpg" width="200" alt="P4CHIMARI Logo">
-</p>
+A Windows tool to manage Perforce workspace changes with an Unreal Engine-style workflow (scan → review → reconcile/checkout/revert), including “hijacked file” cleanup for UE projects.
 
-A powerful Windows tool to manage Perforce workspace changes with an Unreal Engine-style interface.
+## Problem
 
-## ✨ Features
+UE projects + Perforce can generate noisy local states:
+- files modified but not checked out,
+- pending edits scattered across Content folders,
+- UE “hijacks” (auto-checkouts / unchanged edits) cluttering changelists.
 
-### 📁 Smart Folder Selection
-- **Interactive folder picker** - Browse and tick folders you want to scan
-- **Recent folders** - Quick access to your most-used folders
-- **Multi-select support** - Scan multiple folders at once
+P4CHIMARI provides a fast, guided workflow to get from “workspace messy” to “ready to submit” safely.
 
-### 🔍 Advanced Filtering
-- **Filter by action type** - View only adds, edits, or deletes
-- **Pending changes** - See what's already checked out
-- **Unsaved assets** - Find modified files not checked out
+## Who it’s for
 
-### 🛠️ Powerful Actions
-- **Checkout files** - Open files for edit (`p4 edit`)
-- **Reconcile** - Auto-detect and sync all changes (`p4 reconcile`)
-- **Revert files** - Restore files to P4 version (`p4 sync -f`)
-- **Hijacked file management** - Identify and revert files auto-checked out by UE5
-- **UE-style view** - Changelist viewer like Unreal Engine
+- Unreal developers/tech artists using Perforce on Windows
+- Anyone who wants a structured, low-risk way to reconcile and revert
 
-### 🎨 User Experience
-- Animated spinner with elapsed time
-- ASCII art header
-- Progress indicators
-- Double confirmation for dangerous operations
+## Goals
 
----
+- Reduce time spent manually running `p4 status/edit/reconcile/revert`
+- Make dangerous operations explicit (double confirmation)
+- Make UE hijacked-file cleanup quick and repeatable
 
-## 🚀 Quick Start
+## Success metrics
+
+- Time to clean a noisy workspace: minutes, not hours
+- Fewer accidental reverts (guardrails + confirmation)
+- Reduced changelist noise (only real diffs remain)
+
+## Scope
+
+- Local workspace scanning and Perforce CLI orchestration
+- Folder selection + filtering + action execution
+- Hijacked file detection / cleanup via `p4 revert -a` flow
+
+## Non-goals
+
+- Replacing P4V
+- Cross-platform support (Windows-first)
+- Managing branching/merging workflows
+
+## Constraints / assumptions
+
+- Requires `p4` CLI installed and in PATH
+- Requires an active workspace/client configured (`P4PORT`, `P4USER`, etc.)
+- Unreal hijack logic depends on Perforce’s view of unchanged files (`revert -a`)
+
+## Quick start
 
 ### Prerequisites
 - **Go 1.21+** (for building)
@@ -53,116 +66,8 @@ cd src
 go build -o ../p4chimari.exe
 ```
 
----
+## Roadmap
 
-## 📖 Usage
-
-### Running P4CHIMARI
-
-Double-click `RUN.bat` or run `p4chimari.exe` from anywhere.
-
-### Workflow Example
-
-**Quick Mode (Hijacked Files):**
-1. **Launch** → Shows ASCII art and connection status
-2. **Select Option 2** → Manage hijacked files (quick mode)
-3. **View Status** → See real changes vs hijacked files
-4. **Auto-Revert** → Clean up unchanged files
-
-**Standard Mode (Folder Scanning):**
-1. **Launch** → Shows ASCII art and connection status
-2. **Select Option 1** → Scan folders for changes
-3. **Select Folders** → Choose which Content subfolders to scan
-   - Browse: Interactive folder picker
-   - Recent: Quick access to previous selections
-4. **Scan** → Displays modified files with action types
-5. **Filter** → Show only adds, edits, or deletes
-6. **Take Action** → Checkout, reconcile, or revert selected files
-
----
-
-## 📂 Project Structure
-
-```
-p4chimari/
-├── 🎯 RUN.bat           ← CLICK THIS TO RUN!
-├── 🔨 INSTALL.bat       ← Click this to build first
-├── 📖 README.md         ← You are here
-├── bin/                 ← Executable (auto-generated)
-│   └── p4chimari.exe
-├── src/                 ← Source code
-│   ├── main.go
-│   ├── ascii.go
-│   ├── config.go
-│   ├── folderpicker.go
-│   └── viewchanges.go
-└── docs/                ← Documentation & assets
-    └── pachimari.jpg
-```
-
-**Just double-click RUN.bat** - that's it!
-
----
-
-## ⚙️ Configuration
-
-P4CHIMARI stores config in `~/.p4chimari.json`:
-- Recent folder selections
-- Usage statistics
-- Last scan locations
-
----
-
-## 🎯 Key Features Explained
-
-### Hijacked File Management (NEW!)
-Unreal Engine 5 automatically checks out files when you open it, even if you don't modify them. This creates "hijacked files" that clutter your changelist.
-
-**Solution:**
-- **Option 6: Show hijacked files status** - See which files have real changes vs unchanged
-- **Option 7: Revert hijacked files** - Automatically revert all unchanged files using `p4 revert -a`
-
-This keeps only files with actual modifications in your changelist!
-
-### Filter by Action
-```
-Filter by action type:
-  1. Show only Edits    - Modified files
-  2. Show only Adds     - New files
-  3. Show only Deletes  - Removed files
-  4. Show All           - Everything
-```
-
-### Revert Files (⚠️ Dangerous)
-Restores files to P4 version, **permanently deleting local changes**.
-- Select individual files
-- Double confirmation required
-- Type "YES" to confirm
-
-### Folder Picker
-```
-┌─ CATEGORIES ─────────┐
-│ [ ] Blueprints       │
-│ [✓] Maps             │
-│ [✓] Characters       │
-│ [ ] Audio            │
-└──────────────────────┘
-```
-
----
-
-## 🤝 Contributing
-
-Feel free to open issues or submit pull requests!
-
----
-
-## 📝 License
-
-MIT License - Feel free to use and modify!
-
----
-
-<p align="center">
-  Made with ❤️ for Unreal Engine + Perforce workflows
-</p>
+- Add “dry-run” mode for revert/reconcile previews
+- Improve large-workspace performance (incremental scanning, caching)
+- Optional: export reports for changelist reviews (CSV/Markdown)
